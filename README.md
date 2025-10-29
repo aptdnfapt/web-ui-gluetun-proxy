@@ -1,13 +1,27 @@
 # Gluetun Web Controller
 
-A simple web interface to control your Gluetun VPN proxy server.
+A professional localhost-only web interface to manage multiple Gluetun VPN containers on the same machine.
+
+## Project Goal
+
+Manage unlimited VPN proxy containers with unique WireGuard configurations, allowing other local services to route traffic through different VPN locations.
 
 ## Features
 
-- 🌍 Change VPN country with a single click
-- 📊 View current IP, location, and connection status
-- 🎨 Clean, responsive web interface
-- 🚀 Easy to extend for multiple Gluetun servers
+- Create and manage multiple Gluetun Docker containers
+- Automatic port allocation (control: 33000-33100, proxy: 34000-34100)
+- Dynamic VPN country switching without container restart
+- Real-time container status monitoring
+- Clean, professional black-themed interface
+- Container lifecycle management (start/stop/delete)
+- WireGuard credential management
+
+## Architecture
+
+- **Backend**: Node.js/Express serving static frontend
+- **Docker Integration**: Dockerode for container operations
+- **Storage**: JSON-based configuration persistence
+- **Security**: Localhost-only access (no external exposure)
 
 ## Installation
 
@@ -22,46 +36,57 @@ npm install
 # Start the server
 node server.js
 
-# Or use nodemon for auto-restart during development
+# Or use nodemon for development
 npm install -g nodemon
 nodemon server.js
 ```
 
-Then open your browser to: `http://localhost:3000`
+Open your browser to: `http://localhost:3030`
 
-Or via Tailscale: `http://100.94.40.75:3000`
+## Container Configuration
 
-## Configuration
+Each container gets:
+- Unique container name
+- Dedicated control port (33000-33100 range)
+- Dedicated proxy port (34000-34100 range)
+- WireGuard private key and address
+- Default country selection
+- Gluetun control API credentials
 
-Edit `server.js` to change Gluetun connection settings:
+## Integration
 
-```javascript
-const GLUETUN_CONFIG = {
-  host: 'http://localhost:8000',
-  auth: {
-    username: 'vpn-dashboard-user',
-    password: 'your-password-here'
-  }
-};
-```
+Local services can connect to proxy ports:
+- Example: `localhost:34001` routes traffic through first VPN container
+- Use these proxy endpoints in applications, browsers, or other services
 
-## API Endpoints
+## File Structure
 
-- `GET /api/status` - Get current VPN status
-- `POST /api/change-country` - Change VPN country
-- `GET /api/countries` - Get list of available countries
+- `server.js` - Express API endpoints
+- `docker-manager.js` - Docker container operations
+- `port-manager.js` - Port allocation logic
+- `config.js` - Auth file generation
+- `public/` - Frontend assets
+- `containers.json` - Container configuration storage
 
-## Future Enhancements
+## Security Context
 
-- Support for multiple Gluetun instances (10-20+)
-- Dashboard view showing all proxies
-- Bulk operations (change all servers to same country)
-- Connection health monitoring
-- Save/load country presets
-- API key authentication
+This is a localhost-only tool for personal use:
+- No external network exposure
+- No authentication required (localhost only)
+- Acceptable to store credentials in local files
+- Detailed error messages for local debugging
+
+## Requirements
+
+- Node.js
+- Docker
+- Gluetun Docker image (qmcgaw/gluetun)
+- WireGuard VPN credentials (e.g., Surfshark)
 
 ## Tech Stack
 
 - **Backend**: Node.js + Express
-- **Frontend**: Vanilla JavaScript (no frameworks)
-- **Styling**: Pure CSS with gradients
+- **Frontend**: Vanilla JavaScript
+- **Styling**: Modern CSS with animations and gradients
+- **Containerization**: Docker API integration
+- **Storage**: File-based configuration management
