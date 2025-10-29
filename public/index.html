@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gluetun Multi-Container Manager</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌍 Gluetun Multi-Container Manager</h1>
+            <p>Manage unlimited VPN proxy containers</p>
+            <button class="btn-primary" onclick="window.location.href='create.html'">+ Create New Container</button>
+        </header>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3 id="total-containers">0</h3>
+                <p>Total Containers</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="running-containers">0</h3>
+                <p>Running</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="stopped-containers">0</h3>
+                <p>Stopped</p>
+            </div>
+        </div>
+
+        <div class="containers-section">
+            <h2>Your Containers</h2>
+            <div id="containers-list">
+                <div class="loading">Loading containers...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
