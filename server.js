@@ -25,11 +25,11 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // Serve containers.json from parent directory
-app.get('/containers.json', (req, res) => {
-  const fs = require('fs');
+app.get('/containers.json', async (req, res) => {
+  const fs = require('fs').promises;
   const path = require('path');
   try {
-    const data = fs.readFileSync(path.join(__dirname, 'containers.json'), 'utf8');
+    const data = await fs.readFile(path.join(__dirname, 'containers.json'), 'utf8');
     res.setHeader('Content-Type', 'application/json');
     res.send(data);
   } catch (error) {

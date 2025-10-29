@@ -147,27 +147,37 @@ async function createContainer(config) {
   // Create container
   const container = await docker.createContainer(containerConfig);
   
-  // Save config
-  const containers = await loadContainers();
-  containers[name] = {
-    controlPort,
-    proxyPort,
-    country,
-    privateKey,
-    address,
-    createdAt: new Date().toISOString()
-  };
-  await saveContainers(containers);
+  try {
+    // Start container first
+    await container.start();
+    
+    // Only save config if start succeeded
+    const containers = await loadContainers();
+    containers[name] = {
+      controlPort,
+      proxyPort,
+      country,
+      privateKey,
+      address,
+      createdAt: new Date().toISOString()
+    };
+    await saveContainers(containers);
 
-  // Start container
-  await container.start();
-
-  return {
-    id: container.id,
-    name,
-    controlPort,
-    proxyPort
-  };
+    return {
+      id: container.id,
+      name,
+      controlPort,
+      proxyPort
+    };
+  } catch (error) {
+    // If start fails, clean up the container
+    try {
+      await container.remove();
+    } catch (cleanupError) {
+      console.error(`Failed to cleanup container after start failure: ${cleanupError.message}`);
+    }
+    throw error;
+  }
 }
 
 // Delete container
@@ -190,6 +200,16 @@ async function deleteContainer(name) {
 
   // Remove container
   await container.remove();
+
+  // Remove associated volume
+  const volumeName = `gluetun-data-${name}`;
+  try {
+    const volume = docker.getVolume(volumeName);
+    await volume.remove();
+    console.log(`Removed volume: ${volumeName}`);
+  } catch (volumeError) {
+    console.error(`Failed to remove volume ${volumeName}: ${volumeError.message}`);
+  }
 
   // Remove from config
   const containers = await loadContainers();
@@ -247,6 +267,15 @@ async function changeCountry(name, country) {
   const axios = require('axios');
   const auth = await require('./config').getAuthConfig();
   
+  // Get current IP before change
+  let oldIp = null;
+  try {
+    const oldStatus = await getContainerStatus(name);
+    oldIp = oldStatus.public_ip;
+  } catch (error) {
+    // Ignore if we can't get current IP
+  }
+
   await axios.put(
     `http://localhost:${config.controlPort}/v1/vpn/settings`,
     {
@@ -266,9 +295,23 @@ async function changeCountry(name, country) {
   containers[name].country = country;
   await saveContainers(containers);
 
-  // Wait for reconnection
-  await new Promise(resolve => setTimeout(resolve, 8000));
+  // Wait and verify reconnection (max 20 seconds)
+  for (let i = 0; i < 10; i++) {
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    try {
+      const newStatus = await getContainerStatus(name);
+      if (newStatus.public_ip && newStatus.public_ip !== oldIp) {
+        console.log(`VPN reconnected successfully. New IP: ${newStatus.public_ip}`);
+        return newStatus;
+      }
+    } catch (error) {
+      // Continue waiting
+    }
+  }
 
+  // If we get here, reconnection took longer than expected
+  console.log('VPN reconnection taking longer than expected, but change was submitted');
   return await getContainerStatus(name);
 }
 
